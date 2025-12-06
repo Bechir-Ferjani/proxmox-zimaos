@@ -5,10 +5,11 @@
 
 # ZimaOS version
 VERSION="1.5.3"
+1.5.3_installer.img
 
 # Variables
 URL="https://github.com/IceWhaleTech/ZimaOS/releases/download/$VERSION"
-IMAGE="zimaos_zimacube-$VERSION.img"
+IMAGE="zimaos_zimacube-" + $VERSION +"_installer.img"
 EXTRACTED_IMAGE="zimaos_zimacube-$VERSION.img"
 IMAGE_PATH="/var/lib/vz/images/$IMAGE"
 EXTRACTED_PATH="/var/lib/vz/images/$EXTRACTED_IMAGE"
