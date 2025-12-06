@@ -3,12 +3,12 @@
 # github.com/R0GGER/proxmox-zimaos
 # bash -c "$(wget -qLO - https://raw.githubusercontent.com/R0GGER/proxmox-zimaos/refs/heads/main/zimaos_zimacube.sh)"
 
-# ZimaOS version
+# ZimaOS version 
 VERSION="1.5.3"
 
 # Variables
 URL="https://github.com/IceWhaleTech/ZimaOS/releases/download/$VERSION"
-IMAGE="zimaos_zimacube-" + $VERSION +"_installer.img"
+IMAGE="zimaos-x86_64-$VERSION_installer.img"
 EXTRACTED_IMAGE="zimaos_zimacube-$VERSION.img"
 IMAGE_PATH="/var/lib/vz/images/$IMAGE"
 EXTRACTED_PATH="/var/lib/vz/images/$EXTRACTED_IMAGE"
