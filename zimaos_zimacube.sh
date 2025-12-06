@@ -8,7 +8,7 @@ VERSION="1.5.3"
 
 # Variables
 URL="https://github.com/IceWhaleTech/ZimaOS/releases/download/$VERSION"
-IMAGE="zimaos-x86_64-$VERSION_installer.img"
+IMAGE="zimaos-x86_64-${VERSION}_installer.img"
 EXTRACTED_IMAGE="zimaos_zimacube-$VERSION.img"
 IMAGE_PATH="/var/lib/vz/images/$IMAGE"
 EXTRACTED_PATH="/var/lib/vz/images/$EXTRACTED_IMAGE"
