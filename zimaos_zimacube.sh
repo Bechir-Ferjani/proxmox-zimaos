@@ -100,11 +100,7 @@ else
     fi
 fi
 
-# Verify image exists
-if [ ! -f "$IMAGE_PATH" ]; then
-  echo "Error: Image file not found at $IMAGE_PATH"
-  exit 1
-fi
+
 
 # Create VM
 echo "Creating VM..."
