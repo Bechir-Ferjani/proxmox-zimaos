@@ -5,7 +5,6 @@
 
 # ZimaOS version
 VERSION="1.5.3"
-1.5.3_installer.img
 
 # Variables
 URL="https://github.com/IceWhaleTech/ZimaOS/releases/download/$VERSION"
