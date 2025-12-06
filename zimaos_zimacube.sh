@@ -81,6 +81,7 @@ rm -f "/var/lib/vz/images/"zimaos_zimacube*.img "/var/lib/vz/images/"zimaos_zima
 
 # Download the image
 echo "Downloading the image..."
+echo "Downloading from "$URL/$IMAGE"
 wget -q --show-progress -O "$IMAGE_PATH" "$URL/$IMAGE"
 if [ $? -ne 0 ]; then
   echo "Error: Failed to download the image."
