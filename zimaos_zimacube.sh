@@ -8,10 +8,9 @@ VERSION="1.5.3"
 
 # Variables
 URL="https://github.com/IceWhaleTech/ZimaOS/releases/download/$VERSION"
-IMAGE="zimaos-x86_64-${VERSION}_installer.img"
-EXTRACTED_IMAGE="zimaos_zimacube-$VERSION.img"
+EXTRACTED_IMAGE="zimaos-x86_64-$VERSION.img"
 IMAGE_PATH="/var/lib/vz/images/$IMAGE"
-EXTRACTED_PATH="/var/lib/vz/images/$EXTRACTED_IMAGE"
+VM_NAME="ZimaOS-$VERSION"
 
 # Colors
 GREEN='\033[0;32m'
@@ -42,22 +41,28 @@ read -p "Enter VMID (100-999): " VMID
 validate_number $VMID
 check_vmid $VMID
 
-# VM name
-read -p "Enter VM name: " VM_NAME
-
 # Volume
 read -p "Enter volume [local-lvm]: " VOLUME
 VOLUME=${VOLUME:-local-lvm}
 
-# Memory (default 2048)
-read -p "Enter memory size in MB [2048]: " MEMORY
-MEMORY=${MEMORY:-2048}
+# Memory (default 16384)
+read -p "Enter memory size in MB [16384]: " MEMORY
+MEMORY=${MEMORY:-16384}
 validate_number $MEMORY
 
 # Cores
-read -p "Enter number of CPU cores [2]: " CORES
-CORES=${CORES:-2}
+read -p "Enter number of CPU cores [6]: " CORES
+CORES=${CORES:-6}
 validate_number $CORES
+
+# Disk size
+read -p "Enter disk size for VM in GB [30] (minimum: 8G, maximum: available space): " DISK_SIZE
+DISK_SIZE=${DISK_SIZE:-30}
+validate_number $DISK_SIZE
+if [ $DISK_SIZE -lt 8 ]; then
+    echo "Error: Minimum disk size is 8G"
+    exit 1
+fi
 
 echo -e "\n${GREEN}Creating VM with the following parameters:${NC}"
 echo "VMID: $VMID"
@@ -65,41 +70,39 @@ echo "Name: $VM_NAME"
 echo "Volume: $VOLUME"
 echo "Memory: $MEMORY MB"
 echo "Cores: $CORES"
+echo "Disk Size: $DISK_SIZE GB"
 echo "Image: $IMAGE"
 
-read -p "Continue? (y/n): " CONFIRM
-if [[ $CONFIRM != [yY] ]]; then
+read -p "Continue? (Y/n): " CONFIRM
+CONFIRM=${CONFIRM:-Y}
+if [[ ! $CONFIRM =~ ^[Yy]$ ]]; then
     echo "Operation cancelled"
     exit 0
 fi
 
 echo -e "\n${GREEN}Starting VM creation process...${NC}"
 
-# Remove any old zimaos image files
-echo "Cleaning up any existing image files..."
-rm -f "/var/lib/vz/images/"zimaos_zimacube*.img "/var/lib/vz/images/"zimaos_zimacube*.img.xz
+# Check if current image already exists
+if [ -f "$IMAGE_PATH" ]; then
+    echo "Image already exists at $IMAGE_PATH, using it directly..."
+else
+    # Remove any old zimaos image files
+    echo "Cleaning up any existing image files..."
+    rm -f "/var/lib/vz/images/"zimaos-x86_64*.img
 
-# Download the image
-echo "Downloading the image..."
-echo "From: $URL/$IMAGE"
-wget -q --show-progress -O "$IMAGE_PATH" "$URL/$IMAGE"
-if [ $? -ne 0 ]; then
-  echo "Error: Failed to download the image."
-  exit 1
+    # Download the image
+    echo "Downloading the image..."
+    echo "From: $URL/$IMAGE"
+    wget -q --show-progress -O "$IMAGE_PATH" "$URL/$IMAGE"
+    if [ $? -ne 0 ]; then
+      echo "Error: Failed to download the image."
+      exit 1
+    fi
 fi
 
-# Extract the image
-echo "Extracting the image..."
-xz -df "$IMAGE_PATH"
-if [ $? -ne 0 ]; then
-  echo "Error: Failed to extract the image."
-  rm -f "$IMAGE_PATH" # Cleanup if extraction fails
-  exit 1
-fi
-
-# Verify extracted image exists
-if [ ! -f "$EXTRACTED_PATH" ]; then
-  echo "Error: Extracted image file not found at $EXTRACTED_PATH"
+# Verify image exists
+if [ ! -f "$IMAGE_PATH" ]; then
+  echo "Error: Image file not found at $IMAGE_PATH"
   exit 1
 fi
 
@@ -126,7 +129,7 @@ fi
 
 # Import the disk
 echo "Importing the disk..."
-qm importdisk $VMID "$EXTRACTED_PATH" $VOLUME
+qm importdisk $VMID "$IMAGE_PATH" $VOLUME
 if [ $? -ne 0 ]; then
     echo "Error: Failed to import the disk."
     exit 1
@@ -147,8 +150,8 @@ if [ $? -ne 0 ]; then
 fi
 
 # Resize disk
-echo "Resize ZimaOS disk"
-qm resize $VMID sata0 +8G
+echo "Resizing ZimaOS disk to ${DISK_SIZE}G..."
+qm resize $VMID sata0 ${DISK_SIZE}G
 if [ $? -ne 0 ]; then
   echo "Error: Failed to resize the disk."
   exit 1
