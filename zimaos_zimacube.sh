@@ -123,13 +123,37 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Import the disk
-echo "Importing the disk..."
-qm importdisk $VMID "$IMAGE_PATH" $VOLUME
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to import the disk."
-    exit 1
+# Import the disk (with fallbacks)
+echo "Importing the disk (attempting multiple fallbacks)..."
+TMP_ERR="/tmp/qm_import_err_${VMID}.log"
+if qm importdisk $VMID "$IMAGE_PATH" $VOLUME 2>"$TMP_ERR"; then
+    echo "Import successful (detected format)."
+else
+    echo "Detected import failure, retrying with --format raw..."
+    if qm importdisk $VMID "$IMAGE_PATH" $VOLUME --format raw 2>"$TMP_ERR"; then
+        echo "Import successful (raw)."
+    else
+        echo "Raw import failed, attempting conversion to qcow2 and import..."
+        TMP_QCOW="/tmp/zimaos-${VMID}.qcow2"
+        qemu-img convert -O qcow2 "$IMAGE_PATH" "$TMP_QCOW" 2>>"$TMP_ERR"
+        if [ $? -ne 0 ] || [ ! -s "$TMP_QCOW" ]; then
+            echo "Error: qemu-img conversion failed or produced empty file. See $TMP_ERR"
+            sed -n '1,200p' "$TMP_ERR"
+            rm -f "$TMP_QCOW"
+            exit 1
+        fi
+        if qm importdisk $VMID "$TMP_QCOW" $VOLUME 2>"$TMP_ERR"; then
+            echo "Import successful (qcow2 fallback)."
+            rm -f "$TMP_QCOW"
+        else
+            echo "Error: Failed to import disk after conversion. See $TMP_ERR"
+            sed -n '1,200p' "$TMP_ERR"
+            rm -f "$TMP_QCOW"
+            exit 1
+        fi
+    fi
 fi
+rm -f "$TMP_ERR"
 
 # Attach the disk
 echo "Attaching the disk..."
